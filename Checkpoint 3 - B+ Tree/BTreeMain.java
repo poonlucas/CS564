@@ -2,7 +2,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -35,7 +34,6 @@ public class BTreeMain {
 
         /** Start reading the operations now from input file*/
         try {
-            Random random = new Random(); // Create random
             while (scan.hasNextLine()) {
                 Scanner s2 = new Scanner(scan.nextLine());
 
@@ -52,7 +50,7 @@ public class BTreeMain {
                             String level = s2.next();
                             int age = Integer.parseInt(s2.next());
                             /** TODO: Write a logic to generate recordID*/
-                            long recordID = random.nextLong(); // Random long
+                            long recordID = s2.nextLong();
 
                             Student s = new Student(studentId, age, studentName, major, level, recordID);
                             bTree.insert(s);
@@ -102,26 +100,6 @@ public class BTreeMain {
          */
 
         List<Student> studentList = new ArrayList<>();
-
-        /** Read the input file -- student.csv */
-        try (Scanner scanner = new Scanner(new File("student.csv"))) {
-            while (scanner.hasNextLine()) { // Parse each line into Student object and add to studentList
-                String line = scanner.nextLine(); // Next line
-                String[] info = line.split(","); // Split on commas
-                // Student information
-                long studentId = Long.parseLong(info[0]);
-                int age = Integer.parseInt(info[1]);
-                String studentName = info[2];
-                String major = info[3];
-                String level = info[4];
-                long recordId = Long.parseLong(info[5]);
-                // Create new student and add to studentList
-                studentList.add(new Student(studentId, age, studentName, major, level, recordId));
-            }
-        } catch (FileNotFoundException e) { // Catch exception if student.csv not found
-            System.out.println("File not found.");
-        }
-
         return studentList;
     }
 }
