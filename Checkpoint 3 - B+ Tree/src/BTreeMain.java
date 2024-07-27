@@ -100,6 +100,27 @@ public class BTreeMain {
          */
 
         List<Student> studentList = new ArrayList<>();
+
+        /** Read the input file -- student.csv */
+        try (Scanner scanner = new Scanner(new File("student.csv"))) {
+            while (scanner.hasNextLine()) { // Parse each line into Student object and add to studentList
+                String line = scanner.nextLine(); // Next line
+                String[] info = line.split(","); // Split on commas
+                // Student information
+                long studentId = Long.parseLong(info[0]);
+                int age = Integer.parseInt(info[1]);
+                String studentName = info[2];
+                String major = info[3];
+                String level = info[4];
+                long recordId = Long.parseLong(info[5]);
+                // Create new student and add to studentList
+                studentList.add(new Student(studentId, age, studentName, major, level, recordId));
+            }
+        } catch (FileNotFoundException e) { // Catch exception if student.csv not found
+            System.out.println("File not found.");
+        }
+
+
         return studentList;
     }
 }
