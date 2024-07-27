@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -189,6 +190,15 @@ class BTree {
         return true;
     }
 
+    public BTreeNode getLeftMostNode(BTreeNode node) {
+        if (node.leaf) { // If node is leaf, return current node
+            return node;
+        }
+        else { // If node is not leaf, recurse down left subtree
+            return getLeftMostNode(node.children[0]);
+        }
+    }
+
     List<Long> print() {
 
         List<Long> listOfRecordID = new ArrayList<>();
@@ -199,6 +209,22 @@ class BTree {
          * Return a list of recordIDs from left to right of leaf nodes.
          *
          */
+        // If root is null, btree is empty, hence return empty list
+        if (this.root == null) {
+            return listOfRecordID;
+        }
+        // Get leftmost leaf node
+        BTreeNode curr = getLeftMostNode(this.root);
+        // Iterate through each leaf node from left to right
+        while (curr != null) {
+            // Iterate through each recordID in leaf node and add to list of recordIDs
+            for (int i = 0; i < curr.n; i++) {
+                listOfRecordID.add(curr.values[i]);
+            }
+            // Set current node to next
+            curr = curr.next;
+        }
+
         return listOfRecordID;
     }
 }

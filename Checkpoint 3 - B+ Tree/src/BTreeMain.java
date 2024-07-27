@@ -33,6 +33,9 @@ public class BTreeMain {
             bTree.insert(s);
         }
 
+        // DEBUG
+        System.out.println(bTree.print());
+
         /** Start reading the operations now from input file*/
         Random random = new Random(); // New Random Object
         try {
@@ -104,16 +107,16 @@ public class BTreeMain {
         List<Student> studentList = new ArrayList<>();
 
         /** Read the input file -- student.csv */
-        try (Scanner scanner = new Scanner(new File("student.csv"))) {
+        try (Scanner scanner = new Scanner(new File("src/student.csv"))) {
             while (scanner.hasNextLine()) { // Parse each line into Student object and add to studentList
                 String line = scanner.nextLine(); // Next line
                 String[] info = line.split(","); // Split on commas
                 // Student information
                 long studentId = Long.parseLong(info[0]);
-                int age = Integer.parseInt(info[1]);
-                String studentName = info[2];
-                String major = info[3];
-                String level = info[4];
+                int age = Integer.parseInt(info[4]);
+                String studentName = info[1];
+                String major = info[2];
+                String level = info[3];
                 long recordId = Long.parseLong(info[5]);
                 // Create new student and add to studentList
                 studentList.add(new Student(studentId, age, studentName, major, level, recordId));
