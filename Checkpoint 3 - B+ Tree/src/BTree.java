@@ -27,18 +27,28 @@ class BTree {
      * Helper method for recursion for the search method
      * @param node current node
      * @param studentId the studentId we are searching for
-     * @return recordId if found, otherwise return -1
+     * @return leaf node of where the studentId would be if it was in btree
      */
-    private long searchHelper(BTreeNode node, long studentId) {
-        // Iterate through each key in BTree node, or stop when we find key greater than studentId
-        int idx = 0;
-        while (idx < node.n) {
-            if (node.keys[idx] == studentId) return node.values[idx]; // Found, return recordId
-            if (node.keys[idx] < studentId) idx++; // If key is less than studentId increment idx
-            else break; // Otherwise we have found the idx for the child
+    private BTreeNode searchHelper(BTreeNode node, long studentId) {
+        // If node is a leaf, return node
+        if (node.leaf) {
+            return node;
         }
-        if (node.leaf) return -1; // If we have not returned yet and this node is a leaf return -1
-        else return searchHelper(node.children[idx], studentId); // Otherwise recurse down the child
+        // studentID less than node's key at index 0, recurse down left most child
+        if (studentId < node.keys[0]) {
+            return searchHelper(node.children[0], studentId);
+        }
+        // studentID more than node's key at index[n-1], recurse down right most child
+        if (studentId > node.keys[node.n - 1]) {
+            return searchHelper(node.children[node.n], studentId);
+        }
+        // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
+        for (int i = 0; i < node.n - 1; i++) {
+            if (node.keys[i] <= studentId && studentId < node.keys[i + 1]) {
+                return searchHelper(node.children[i], studentId);
+            }
+        }
+        return null;
     }
 
     long search(long studentId) {
@@ -48,13 +58,24 @@ class BTree {
          * Return recordID for the given StudentID.
          * Otherwise, print out a message that the given studentId has not been found in the table and return -1.
          */
-        BTreeNode root = this.root; // Start with root node
-        long result = searchHelper(root, studentId); // Call helper method for recursion
-        if (result == -1) {
-            // Print not found message
+        // If root is null, btree is empty hence return not found.
+        if (this.root == null) {
             System.out.println("The given studentId has not been found in the table.");
+            return -1;
         }
-        return result; // Return recordId or -1 if not found
+        // Get leaf node where the studentID would be in if it was in btree
+        BTreeNode leaf = searchHelper(this.root, studentId);
+        // Iterate through leaf node to see if studentID exists
+        // Probably can do binary search to get O(logt) time instead of linear O(n)
+        for (int i = 0; i < leaf.n; i++) {
+            // If key at index i is equal to studentID, return the recordID at index i
+            if (leaf.keys[i] == studentId) {
+                return leaf.values[i];
+            }
+        }
+        // studentID not found, return -1
+        System.out.println("The given studentId has not been found in the table.");
+        return -1;
     }
 
     private void insertNonFull(BTreeNode node, Student student) {
