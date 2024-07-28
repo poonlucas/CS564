@@ -132,9 +132,20 @@ class BTree {
             int insertIndex = findIndex(node, student.studentId);
             BTreeNode newNode = new BTreeNode(this.t, false);
 
-            for (int i = 0; i < this.t; i++) {
-
+            int mid = this.t;
+            for (int i = mid, j = 0; i < node.keys.length; i++, j++) {
+                newNode.keys[j] = node.keys[i]; // Move last d keys to new node
+                newNode.children[j] = node.children[i]; // Move last d+1 pointers to new node
+                newNode.n++;
+                node.keys[i] = 0;  // Clear the key in the old node
+                node.children[i] = null;  // Clear the pointer in the old node
+                node.n--;
             }
+            newNode.children[newNode.n] = node.children[node.keys.length];
+            node.children[node.keys.length] = null;
+
+            // Set newChildEntry to guide searches between N and N2
+            newChildEntry = new NewChildEntry(newNode, newNode.keys[0]);
 
             // Edge case, node is root
             if (node.equals(root)) {
@@ -144,7 +155,9 @@ class BTree {
                 newRoot.children[1] = newNode;
                 newRoot.n = 1;
                 this.root = newRoot;
+                return null;
             }
+            return newChildEntry;
         }
 
         int index = findIndex(node, student.studentId);
