@@ -226,12 +226,46 @@ class BTree {
         return new NewChildEntry(newNode, newNode.keys[0]);
     }
 
+    
+    private void appendStudentToCSV(Student student) {
+        String csvFile = "src/Student.csv";
+        boolean studentExists = false;
+
+        try (Scanner scanner = new Scanner(new File(csvFile))) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                String[] fields = line.split(",");
+                if (fields.length > 0) {
+                    long studentId = Long.parseLong(fields[0]);
+                    if (studentId == student.studentId) {
+                        studentExists = true;
+                        break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (!studentExists) {
+            try (FileWriter writer = new FileWriter(csvFile, true)) {
+                writer.append(String.format("%d,%s,%s,%s,%d,%d\n",
+                        student.studentId, student.studentName, student.major, student.level,
+                        student.age, student.recordId));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } 
+    }
+
     BTree insert(Student student) {
         /**
         * * TODO:
         * Implement this function to insert in the B+Tree.
         * Also, insert in student.csv after inserting in B+Tree.
         */
+
+
 
         if (this.root == null) {
         this.root = new BTreeNode(t, true);
@@ -272,6 +306,9 @@ class BTree {
                 System.out.println("Failed to write to file.");
             }
         }
+
+        // Append the new student to the CSV file
+        appendStudentToCSV(student);
 
         return this;
     }
