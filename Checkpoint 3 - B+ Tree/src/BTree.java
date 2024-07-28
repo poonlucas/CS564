@@ -1,6 +1,7 @@
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * B+Tree Structure
@@ -18,9 +19,33 @@ class BTree {
      **/
     private int t;
 
+    /**
+     * RecordID to Student Mapping
+     */
+    private Map<Long, Student> recordToStudentMap;
+
     BTree(int t) {
         this.root = null;
         this.t = t;
+        this.recordToStudentMap = new HashMap<>();
+    }
+
+    private int findIndex(BTreeNode node, long studentId) {
+        // studentID less than node's key at index 0, recurse down left most child
+        if (studentId < node.keys[0]) {
+            return 0;
+        }
+        // studentID more than node's key at index[n-1], recurse down right most child
+        if (studentId > node.keys[node.n - 1]) {
+            return node.n;
+        }
+        // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
+        for (int i = 0; i < node.n - 1; i++) {
+            if (node.keys[i] <= studentId && studentId < node.keys[i + 1]) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -34,21 +59,9 @@ class BTree {
         if (node.leaf) {
             return node;
         }
-        // studentID less than node's key at index 0, recurse down left most child
-        if (studentId < node.keys[0]) {
-            return searchHelper(node.children[0], studentId);
-        }
-        // studentID more than node's key at index[n-1], recurse down right most child
-        if (studentId > node.keys[node.n - 1]) {
-            return searchHelper(node.children[node.n], studentId);
-        }
-        // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
-        for (int i = 0; i < node.n - 1; i++) {
-            if (node.keys[i] <= studentId && studentId < node.keys[i + 1]) {
-                return searchHelper(node.children[i], studentId);
-            }
-        }
-        return null;
+        // Find index i s.t. K_i <= studentId < K_{i+1}
+        int i = findIndex(node, studentId);
+        return searchHelper(node.children[i], studentId);
     }
 
     long search(long studentId) {
@@ -201,272 +214,280 @@ class BTree {
         return this;
     }
 
+    private static class OldChildEntry {
+        BTreeNode oldChildEntry;
+
+        public OldChildEntry() {
+            this.oldChildEntry = null;
+        }
+
+        public BTreeNode getOldChildEntry() {
+            return this.oldChildEntry;
+        }
+
+        public void setOldChildEntry(BTreeNode node) {
+            this.oldChildEntry = node;
+        }
+    }
+
     /**
      * Helper method deletion for given studentId
      * @param parent parent node
      * @param node current node
      * @param studentId studentId to delete
      */
-    private DeleteResult deleteHelper(BTreeNode parent, BTreeNode node, long studentId, BTreeNode oldChildEntry) {
+    private boolean deleteHelper(BTreeNode parent, BTreeNode node, long studentId, OldChildEntry oldChildEntry) {
         // If pointer is not a leaf node, recurse until we find leaf where studentId belongs
         if (!node.leaf) {
-            // studentID less than node's key at index 0, recurse down left most child
-            if (studentId < node.keys[0]) {
-                oldChildEntry = deleteHelper(node, node.children[0], studentId, oldChildEntry);
+            // Find index i s.t. K_i <= studentId < K_{i+1}
+            int index = findIndex(node, studentId);
+            // Recursive delete
+            boolean result = deleteHelper(node, node.children[index], studentId, oldChildEntry);
+            // Usual case: Child not deleted
+            if (oldChildEntry.getOldChildEntry() == null) {
+                return result;
             }
-            // studentID more than node's key at index[n-1], recurse down right most child
-            if (studentId > node.keys[node.n - 1]) {
-                oldChildEntry = deleteHelper(node, node.children[node.n], studentId, oldChildEntry);
-            }
-            // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
-            for (int i = 0; i < node.n - 1; i++) {
-                if (node.keys[i] <= studentId && studentId < node.keys[i + 1]) {
-                    oldChildEntry = deleteHelper(node, node.children[i], studentId, oldChildEntry);
-                }
-            }
-            if (oldChildEntry == null) {
-                return null;
-            } else {
-                // Find index of old child entry to be deleted
-                int idx = 0;
-                while (idx < node.n && !node.children[idx].equals(oldChildEntry)) {
-                    idx++;
-                }
-                // Delete and shift key and children in this node
-                for (int i = idx; i < node.n - 1; i++) {
-                    node.keys[i - 1] = node.keys[i];
-                    node.children[i] = node.children[i + 1];
-                }
-                node.keys[node.n - 1] = 0;
-                node.children[node.n] = null;
-                node.n--;
 
-                // If node has entries to spare, we are done
-                if (node.n >= node.t || node.equals(this.root)) {
-                    return null;
-                }
-
-                // Otherwise try to redistribute
-                // Find index of current node in parent
-                int currIndex = 0;
-                // Iterate until we find the index of node in parent's children
-                while (currIndex < parent.n && !parent.children[currIndex].equals(node)) {
-                    currIndex++;
-                }
-
-                // Try right sibling, if it exists
-                if (currIndex + 1 < parent.n) {
-                    // Right sibling
-                    BTreeNode rightSibling = parent.children[currIndex + 1];
-                    // Check if we can redistribute, that is, if the total number of keys is greater or equal to 2 * degree
-                    int total = (node.n + rightSibling.n);
-                    if (total >= 2 * node.t) {
-                        // Move first in right sibling into current node
-                        node.keys[node.n] = rightSibling.keys[0];
-                        node.children[node.n] = rightSibling.children[0];
-                        node.n++;
-                        // Now remove first key and child in right sibling
-                        for (int i = 0; i < rightSibling.n - 1; i++) {
-                            rightSibling.keys[i] = rightSibling.keys[i + 1];
-                            rightSibling.children[i] = rightSibling.children[i + 1];
-                        }
-                        rightSibling.keys[rightSibling.n - 1] = 0;
-                        rightSibling.children[rightSibling.n - 1] = null;
-                        // Decrement n
-                        rightSibling.n--;
-                        // Update parent
-                        parent.keys[currIndex] = rightSibling.keys[0];
-                        // We are done
-                        return null;
-                    }
-                }
-                // Try left sibling, if it exists
-                if (currIndex - 1 >= 0) {
-                    // Left sibling
-                    BTreeNode leftSibling = parent.children[currIndex - 1];
-                    // Check if we can redistribute, that is, if the total number of keys is greater or equal to 2 * degree
-                    int total = (node.n + leftSibling.n);
-                    if (total >= 2 * node.t) {
-                        // Move last in left sibling into first in current node
-                        for (int i = node.n - 1; i > 0; i--) {
-                            node.keys[i] = node.keys[i - 1];
-                            node.children[i + 1] = node.children[i];
-                        }
-                        node.keys[0] = leftSibling.keys[leftSibling.n - 1];
-                        node.children[0] = leftSibling.children[leftSibling.n - 1];
-                        node.n++;
-                        // Now remove last key and child in left sibling, decrement n for left sibling
-                        leftSibling.keys[leftSibling.n - 1] = 0;
-                        leftSibling.children[leftSibling.n - 1] = null;
-                        leftSibling.n--;
-                        // Update parent
-                        parent.keys[currIndex] = node.keys[0];
-                        // We are done
-                        return null;
-                    }
-                }
-
-                // Otherwise merge
-                // Try right sibling, if it exists
-                if (currIndex + 1 < parent.n) {
-                    // Right sibling
-                    BTreeNode rightSibling = parent.children[currIndex + 1];
-                    // Pull splitting key from parent
-                    node.keys[node.n] = parent.keys[node.n];
-                    node.n++;
-                    // Merge right sibling into current node
-                    for (int i = 0; i < rightSibling.n - 1; i++) {
-                        node.keys[node.n + i] = rightSibling.keys[i];
-                        node.children[node.n + i] = rightSibling.children[i];
-                    }
-                    node.n += rightSibling.n;
-                    node.children[node.n] = rightSibling.children[rightSibling.n];
-                    // Adjust sibling pointers
-                    node.next = rightSibling.next;
-                    // Return right sibling as old child entry
-                    return rightSibling;
-                }
-
-                // Try left sibling, if it exists
-                if (currIndex - 1 >= 0) {
-                    // Left sibling
-                    BTreeNode leftSibling = parent.children[currIndex + 1];
-                    // Pull splitting key from parent
-                    leftSibling.keys[node.n] = parent.keys[node.n];
-                    // Merge left sibling into current node
-                    for (int i = 0; i < node.n - 1; i++) {
-                        leftSibling.keys[leftSibling.n + i] = node.keys[i];
-                        leftSibling.children[leftSibling.n + i] = node.children[i];
-                    }
-                    leftSibling.n += node.n;
-                    leftSibling.children[leftSibling.n] = node.children[node.n];
-                    // Adjust sibling pointers
-                    leftSibling.next = node.next;
-                    // Return current node as old child entry
-                    return node;
-                }
-            }
-        }
-
-        // Otherwise, this node is a leaf pointer
-        else {
-            // Find index of studentID if it exists and delete
+            // We discarded child node
+            // Find index of old child entry to be deleted
             int idx = 0;
-            // Iterate through keys until found or n to find index of studentId if it exists
-            while (idx < node.n && node.keys[idx] != studentId) {
+            while (idx < node.n && !node.children[idx].equals(oldChildEntry.getOldChildEntry())) {
                 idx++;
             }
-            // If idx is greater or equal to node.n then it does not exist hence return false
-            if (idx >= node.n) {
-                return null;
-            }
-
-            // Shift key value arrays and delete the element
+            // Delete and shift key and children in this node
             for (int i = idx; i < node.n; i++) {
-                node.keys[idx] = node.keys[idx + 1];
-                node.values[idx] = node.values[idx + 1];
+                node.keys[i - 1] = node.keys[i];
+                node.children[i] = node.children[i + 1];
             }
-            // Decrement number of nodes in node
+            // Erase last element
+            node.keys[node.n - 1] = 0;
+            node.children[node.n] = null;
+            // Decrement node.n
             node.n--;
-            // TODO: csv update
-            // If leaf node has entries to spare, we are done
-            if (node.n >= node.t) {
-                return null;
+
+            // Check minimum occupancy, or root, we are done
+            if (node.n >= node.t || node.equals(this.root)) {
+                oldChildEntry.setOldChildEntry(null); // Delete doesn't go further
+                return result;
             }
 
-            // Otherwise try to redistribute
             // Find index of current node in parent
             int currIndex = 0;
             // Iterate until we find the index of node in parent's children
             while (currIndex < parent.n && !parent.children[currIndex].equals(node)) {
                 currIndex++;
             }
-            // Try right sibling, if it exists
-            if (currIndex + 1 < parent.n) {
-                // Right sibling
-                BTreeNode rightSibling = parent.children[currIndex + 1];
-                // Check if we can redistribute, that is, if the total number of kv pairs is greater or equal to 2 * degree
-                int total = (node.n + rightSibling.n);
-                if (total >= 2 * node.t) {
-                    // Move first in right sibling into current node
+
+            // Siblings, null if not exist
+            BTreeNode rightSibling = (currIndex + 1 < parent.n) ? parent.children[currIndex + 1] : null;
+            BTreeNode leftSibling = (currIndex - 1 >= 0) ? parent.children[currIndex - 1] : null;
+
+            // Try to redistribute
+            if (rightSibling != null) {
+                // Check if right sibling has extra entries
+                int total = node.n + rightSibling.n;
+                if (total / 2 >= this.t) {
+                    // Redistribute evenly between right sibling and current node through parent
+                    while (node.n < total / 2) {
+                        // Current node gets parent key
+                        node.keys[node.n] = parent.keys[currIndex];
+                        node.n++;
+                        // Parent node gets right sibling key
+                        parent.keys[currIndex] = rightSibling.keys[0];
+                        // Current node gets right sibling child
+                        node.children[node.n + 1] = rightSibling.children[0];
+                        // Shift right sibling
+                        for (int i = 0; i < rightSibling.n - 1; i++) {
+                            rightSibling.keys[i] = rightSibling.keys[i + 1];
+                            rightSibling.children[i] = rightSibling.children[i + 1];
+                        }
+                        // One more time for children
+                        rightSibling.children[rightSibling.n - 1] = rightSibling.children[rightSibling.n];
+                        // Empty last element
+                        rightSibling.keys[rightSibling.n - 1] = 0;
+                        rightSibling.children[rightSibling.n] = null;
+                        // Decrement right sibling n
+                        rightSibling.n--;
+                    }
+                    oldChildEntry.setOldChildEntry(null); // Delete does not go further
+                    return result;
+                }
+            }
+            if (leftSibling != null) {
+                // Check if left sibling has extra entries
+                int total = node.n + leftSibling.n;
+                if (total / 2 >= this.t) {
+                    // Redistribute evenly between right sibling and current node through parent
+                    while (node.n < total / 2) {
+                        // Current node gets parent key
+                        for (int i = node.n; i > 0; i--) {
+                            node.keys[i] = node.keys[i - 1];
+                        }
+                        node.keys[0] = parent.keys[currIndex - 1];
+                        node.n++;
+                        // Parent node gets left sibling key
+                        parent.keys[currIndex - 1] = leftSibling.keys[leftSibling.n - 1];
+                        // Current node gets left sibling child
+                        for (int i = node.n; i > 0; i--) {
+                            node.children[i] = node.children[i - 1];
+                        }
+                        node.children[0] = leftSibling.children[leftSibling.n];
+                        // Remove last key and child from left sibling
+                        leftSibling.keys[leftSibling.n - 1] = 0;
+                        leftSibling.children[leftSibling.n] = null;
+                        leftSibling.n--;
+                    }
+                    oldChildEntry.setOldChildEntry(null); // Delete does not go further
+                    return result;
+                }
+            }
+
+            // Try to merge
+            if (rightSibling != null) {
+                oldChildEntry.setOldChildEntry(rightSibling);
+                // Pull splitting key from parent down into current node
+                node.keys[node.n] = parent.keys[currIndex];
+                node.n++;
+                // Move all entries in right sibling into current node
+                for (int i = 0; i < rightSibling.n; i++) {
+                    node.keys[node.n + i] = rightSibling.keys[i];
+                    node.children[node.n + i] = rightSibling.children[i];
+                }
+                node.n += rightSibling.n;
+                node.children[node.n] = rightSibling.children[rightSibling.n];
+                // Right sibling will be automatically discarded when parent reference is removed
+                return result;
+            }
+            if (leftSibling != null) {
+                oldChildEntry.setOldChildEntry(node);
+                // Pull splitting key from parent down into left sibling
+                leftSibling.keys[leftSibling.n] = parent.keys[currIndex - 1];
+                leftSibling.n++;
+                // Move all entries in current node into left sibling
+                for (int i = 0; i < node.n; i++) {
+                    leftSibling.keys[leftSibling.n + i] = node.keys[i];
+                    leftSibling.children[leftSibling.n + i] = node.children[i];
+                }
+                leftSibling.n += node.n;
+                leftSibling.children[leftSibling.n] = node.children[node.n];
+                // Current node will be automatically discarded when parent reference is removed
+                return result;
+            }
+            return false;
+        }
+
+        // Otherwise, this node is a leaf
+        int index = findIndex(node, studentId);
+        // If studentId not found in leaf node, return false
+        if (index == -1) {
+            oldChildEntry.setOldChildEntry(null);
+            return false;
+        }
+
+        // Delete entry
+        for (int i = index; i < node.n - 1; i++) {
+            node.keys[i] = node.keys[i + 1];
+            node.values[i] = node.values[i + 1];
+        }
+        node.keys[node.n - 1] = 0;
+        node.values[node.n - 1] = 0;
+        node.n--;
+
+        // If node has entries to spare or is root
+        if (node.n >= this.t || node.equals(this.root)) {
+            oldChildEntry.setOldChildEntry(null);
+            return true;
+        }
+
+        // Find index of current node in parent
+        int currIndex = 0;
+        // Iterate until we find the index of node in parent's children
+        while (currIndex < parent.n && !parent.children[currIndex].equals(node)) {
+            currIndex++;
+        }
+
+        // Siblings, null if not exist
+        BTreeNode rightSibling = (currIndex + 1 < parent.n) ? parent.children[currIndex + 1] : null;
+        BTreeNode leftSibling = (currIndex - 1 >= 0) ? parent.children[currIndex - 1] : null;
+
+        // Try redistribute
+        if (rightSibling != null) {
+            // Check if right sibling has extra entries
+            int total = node.n + rightSibling.n;
+            if (total / 2 >= this.t) {
+                // Redistribute evenly between right sibling and current node
+                while (node.n < total / 2) {
+                    // Current node gets first right sibling key
                     node.keys[node.n] = rightSibling.keys[0];
                     node.values[node.n] = rightSibling.values[0];
                     node.n++;
-                    // Now remove first kv in right sibling
+                    // Parent node gets right sibling key
+                    parent.keys[currIndex] = rightSibling.keys[1];
+                    // Shift right sibling
                     for (int i = 0; i < rightSibling.n - 1; i++) {
                         rightSibling.keys[i] = rightSibling.keys[i + 1];
-                        rightSibling.values[i] = rightSibling.values[i + 1];
                     }
+                    // Empty last element
                     rightSibling.keys[rightSibling.n - 1] = 0;
-                    rightSibling.values[rightSibling.n - 1] = 0;
-                    // Decrement n
+                    // Decrement right sibling n
                     rightSibling.n--;
-                    // Update parent
-                    parent.keys[currIndex] = rightSibling.keys[0];
-                    // We are done
-                    return null;
                 }
+                oldChildEntry.setOldChildEntry(null); // Delete does not go further
+                return true;
             }
-            // Try left sibling, if it exists
-            if (currIndex - 1 >= 0) {
-                // Left sibling
-                BTreeNode leftSibling = parent.children[currIndex - 1];
-                // Check if we can redistribute, that is, if the total number of kv pairs is greater or equal to 2 * degree
-                int total = (node.n + leftSibling.n);
-                if (total >= 2 * node.t) {
-                    // Move last in left sibling into first in current node
-                    for (int i = node.n - 1; i > 0; i--) {
+        }
+        if (leftSibling != null) {
+            // Check if left sibling has extra entries
+            int total = node.n + leftSibling.n;
+            if (total / 2 >= this.t) {
+                // Redistribute evenly between right sibling and current node through parent
+                while (node.n < total / 2) {
+                    // Current node gets parent key
+                    for (int i = node.n; i > 0; i--) {
                         node.keys[i] = node.keys[i - 1];
-                        node.values[i] = node.keys[i - 1];
                     }
                     node.keys[0] = leftSibling.keys[leftSibling.n - 1];
                     node.values[0] = leftSibling.values[leftSibling.n - 1];
                     node.n++;
-                    // Now remove last kv in left sibling, decrement n for left sibling
+                    // Parent node gets left sibling key
+                    parent.keys[currIndex - 1] = node.keys[0];
+                    // Remove last key value in left sibling
                     leftSibling.keys[leftSibling.n - 1] = 0;
                     leftSibling.values[leftSibling.n - 1] = 0;
+                    // Decrement left sibling n
                     leftSibling.n--;
-                    // Update parent
-                    parent.keys[currIndex] = node.keys[0];
-                    // We are done
-                    return null;
                 }
-            }
-
-            // Otherwise merge
-            // Try right sibling, if it exists
-            if (currIndex + 1 < parent.n) {
-                // Right sibling
-                BTreeNode rightSibling = parent.children[currIndex + 1];
-                // Merge right sibling kv into current node kvs, sum the total kvs
-                for (int i = 0; i < rightSibling.n - 1; i++) {
-                    node.keys[node.n + i] = rightSibling.keys[i];
-                    node.values[node.n + i] = rightSibling.values[i];
-                }
-                node.n += rightSibling.n;
-                // Adjust sibling pointers
-                node.next = rightSibling.next;
-                // Return right sibling as old child entry
-                return rightSibling;
-            }
-
-            // Try left sibling, if it exists
-            if (currIndex - 1 >= 0) {
-                // Left sibling
-                BTreeNode leftSibling = parent.children[currIndex + 1];
-                // Merge right sibling kv into current node kvs, sum the total kvs
-                for (int i = 0; i < node.n - 1; i++) {
-                    leftSibling.keys[leftSibling.n + i] = node.keys[i];
-                    leftSibling.values[leftSibling.n + i] = node.values[i];
-                }
-                leftSibling.n += node.n;
-                // Adjust sibling pointers
-                leftSibling.next = node.next;
-                // Return current node as old child entry
-                return node;
+                oldChildEntry.setOldChildEntry(null); // Delete does not go further
+                return true;
             }
         }
-        return null;
+
+        // Try to merge
+        if (rightSibling != null) {
+            oldChildEntry.setOldChildEntry(rightSibling);
+            // Move all entries in right sibling into current node
+            for (int i = 0; i < rightSibling.n; i++) {
+                node.keys[node.n + i] = rightSibling.keys[i];
+                node.values[node.n + i] = rightSibling.values[i];
+            }
+            node.n += rightSibling.n;
+            node.next = rightSibling.next;
+            // Right sibling will be automatically discarded when parent reference is removed
+            return true;
+        }
+        if (leftSibling != null) {
+            oldChildEntry.setOldChildEntry(node);
+            // Move all entries in current node into left sibling
+            for (int i = 0; i < node.n; i++) {
+                leftSibling.keys[leftSibling.n + i] = node.keys[i];
+                leftSibling.values[leftSibling.n + i] = node.values[i];
+            }
+            leftSibling.n += node.n;
+            leftSibling.next = node.next;
+            // Current node will be automatically discarded when parent reference is removed
+            return true;
+        }
+        return false;
     }
 
 
@@ -481,7 +502,8 @@ class BTree {
         if (this.root == null) {
             return false;
         }
-        return deleteHelper(null, this.root, studentId, null);
+        OldChildEntry oldChildEntry = new OldChildEntry();
+        return deleteHelper(null, this.root, studentId, oldChildEntry);
     }
 
     public BTreeNode getLeftMostNode(BTreeNode node) {
