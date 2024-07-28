@@ -165,6 +165,7 @@ class BTree {
         if (node.n < node.keys.length) {
             for (int i = node.n; i > index; i--) {
                 node.keys[i] = node.keys[i - 1];
+                node.values[i] = node.values[i - 1];
             }
             node.keys[index] = student.studentId;
             node.values[index] = student.recordId;
