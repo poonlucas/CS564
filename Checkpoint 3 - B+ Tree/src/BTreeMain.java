@@ -33,9 +33,6 @@ public class BTreeMain {
             bTree.insert(s);
         }
 
-        // DEBUG
-        System.out.println(bTree.print());
-
         /** Start reading the operations now from input file*/
         Random random = new Random(); // New Random Object
         try {
