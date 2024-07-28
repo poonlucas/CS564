@@ -42,7 +42,7 @@ class BTree {
         // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
         for (int i = 0; i < node.n - 1; i++) {
             if (node.keys[i] <= studentId && studentId < node.keys[i + 1]) {
-                return i;
+                return ++i;
             }
         }
         return -1;
@@ -398,9 +398,12 @@ class BTree {
         }
 
         // Otherwise, this node is a leaf
-        int index = findIndex(node, studentId);
+        int index = 0;
+        while (index < node.n && node.keys[index] != studentId) {
+            index++;
+        }
         // If studentId not found in leaf node, return false
-        if (index == -1) {
+        if (index == node.n) {
             oldChildEntry.setOldChildEntry(null);
             return false;
         }
@@ -523,8 +526,7 @@ class BTree {
         if (this.root == null) {
             return false;
         }
-        OldChildEntry oldChildEntry = new OldChildEntry();
-        return deleteHelper(null, this.root, studentId, oldChildEntry);
+        return deleteHelper(null, this.root, studentId, new OldChildEntry());
     }
 
     public BTreeNode getLeftMostNode(BTreeNode node) {

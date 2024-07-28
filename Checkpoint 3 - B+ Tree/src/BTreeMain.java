@@ -44,6 +44,7 @@ public class BTreeMain {
 
                     String operation = s2.next();
 
+
                     switch (operation) {
                         case "insert": {
 
@@ -88,11 +89,17 @@ public class BTreeMain {
                             System.out.println("Wrong Operation");
                             break;
                     }
+
+                    System.out.println(operation + ": " + bTree.print());
+
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        System.out.println(bTree.print());
+
     }
 
     private static List<Student> getStudents() {
