@@ -89,8 +89,6 @@ public class BTreeMain {
                             break;
                     }
 
-                    System.out.println(operation + ": " + bTree.print());
-
                 }
             }
         } catch (Exception e) {
