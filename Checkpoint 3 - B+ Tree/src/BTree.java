@@ -1,7 +1,8 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
 /**
  * B+Tree Structure
@@ -19,15 +20,9 @@ class BTree {
      **/
     private int t;
 
-    /**
-     * RecordID to Student Mapping
-     */
-    private Map<Long, Student> recordToStudentMap;
-
     BTree(int t) {
         this.root = null;
         this.t = t;
-        this.recordToStudentMap = new HashMap<>();
     }
 
     private int findIndex(BTreeNode node, long studentId) {
@@ -233,20 +228,52 @@ class BTree {
 
     BTree insert(Student student) {
         /**
-         * TODO:
-         * Implement this function to insert in the B+Tree.
-         * Also, insert in student.csv after inserting in B+Tree.
-         */
+        * * TODO:
+        * Implement this function to insert in the B+Tree.
+        * Also, insert in student.csv after inserting in B+Tree.
+        */
 
-         if (this.root == null) {
-            this.root = new BTreeNode(t, true);
-            this.root.keys[0] = student.studentId;
-            this.root.values[0] = student.recordId;
-            this.root.n = 1;
-            return this;
-         }
-         insertHelper(this.root, student);
-         return this;
+        if (this.root == null) {
+        this.root = new BTreeNode(t, true);
+        this.root.keys[0] = student.studentId;
+        this.root.values[0] = student.recordId;
+        this.root.n = 1;
+        return this;
+        }
+        insertHelper(this.root, student);
+
+        // Read old csv
+        List<Long> studentList = new ArrayList<>();
+        try (Scanner scanner = new Scanner(new File("src/student.csv"))) {
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine(); // Next line
+                String[] info = line.split(","); // Split on commas
+                // Student information
+                long stuId = Long.parseLong(info[0]);
+                // Create new student and add to studentList
+                studentList.add(stuId);
+            }
+        } catch (FileNotFoundException e) { // Catch exception if student.csv is not found
+            System.out.println("File not found.");
+        }
+
+        if (!studentList.contains(student.studentId)) {
+            // Write to csv
+            try (FileWriter csvWriter = new FileWriter("src/student.csv", true)) {
+                String studentId = Long.toString(student.studentId);
+                String name = student.studentName;
+                String major = student.major;
+                String level = student.level;
+                String age = String.valueOf(student.age);
+                String recordId = Long.toString(student.recordId);
+                String studentRecord = String.format("%s,%s,%s,%s,%s,%s\r\n", studentId, name, major, level, age, recordId);
+                csvWriter.append(studentRecord);
+            } catch (IOException e) {
+                System.out.println("Failed to write to file.");
+            }
+        }
+
+        return this;
     }
 
     private static class OldChildEntry {
@@ -540,7 +567,42 @@ class BTree {
         if (this.root == null) {
             return false;
         }
-        return deleteHelper(null, this.root, studentId, new OldChildEntry());
+        boolean result = deleteHelper(null, this.root, studentId, new OldChildEntry());
+
+        if (result) {
+            // Read old csv
+            List<String> studentList = new ArrayList<>();
+            try (Scanner scanner = new Scanner(new File("src/student.csv"))) {
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine(); // Next line
+                    String[] info = line.split(","); // Split on commas
+                    // Student information
+                    long stuId = Long.parseLong(info[0]);
+                    if (stuId == studentId) {
+                        continue;
+                    }
+                    // Create new student and add to studentList
+                    studentList.add(line);
+                }
+            } catch (FileNotFoundException e) { // Catch exception if student.csv is not found
+                System.out.println("File not found.");
+            }
+            // Write to csv
+            try (FileWriter csvWriter = new FileWriter("src/student.csv", false)) {
+                studentList.forEach(s -> {
+                    try {
+                        csvWriter.append(s + "\r\n");
+                    } catch (IOException e) {
+                        System.out.println("Failed to write to file.");
+                    }
+                });
+            } catch (IOException e) {
+                System.out.println("Failed to write to file.");
+            }
+        }
+
+        return result;
+
     }
 
     public BTreeNode getLeftMostNode(BTreeNode node) {
