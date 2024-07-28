@@ -91,104 +91,131 @@ class BTree {
         return -1;
     }
 
-    private void insertNonFull(BTreeNode node, Student student) {
-        int i = node.n - 1;
+    private static class NewChildEntry {
+        BTreeNode newChildEntryPointer;
+        long newChildEntry;
 
-        if (node.leaf) {
-            while (i >= 0 && student.studentId < node.keys[i]) {
-                node.keys[i + 1] = node.keys[i];
-                node.values[i + 1] = node.values[i];
-                i--;
-            }
+        public NewChildEntry(BTreeNode newChildEntryPointer, long newChildEntry) {
+            this.newChildEntryPointer = newChildEntryPointer;
+            this.newChildEntry = newChildEntry;
+        }
 
-            node.keys[i + 1] = student.studentId;
-            node.values[i + 1] = student.recordId;
-            node.n++;
+        public BTreeNode getNewChildEntryPointer() {
+            return newChildEntryPointer;
+        }
 
-            if (node.n == 2 * t) {
-                split(node);
-            }
-        } else {
-            while (i >= 0 && student.studentId < node.keys[i]) {
-                i--;
-            }
-            i++;
-
-            if (node.children[i].n == 2 * t - 1) {
-                split(node.children[i]);
-
-                if (student.studentId > node.keys[i]) {
-                    i++;
-                }
-            }
-            insertNonFull(node.children[i], student);
+        public long getNewChildEntry() {
+            return newChildEntry;
         }
     }
 
-    private void split(BTreeNode node) {
-        int mid = t - 1;
-        BTreeNode newNode = new BTreeNode(t, node.leaf);
-
-        for (int j = 0; j < t - 1; j++) {
-            newNode.keys[j] = node.keys[j + t];
-            if (node.leaf) {
-                newNode.values[j] = node.values[j + t];
-            }
-        }
-
+    private NewChildEntry insertHelper(BTreeNode node, Student student) {
+        // If pointer is not a leaf node, recurse until we find leaf where studentId belongs
         if (!node.leaf) {
-            for (int j = 0; j < t; j++) {
-                newNode.children[j] = node.children[j + t];
+            // Find index i s.t. K_i <= studentId < K_{i+1}
+            int index = findIndex(node, student.studentId);
+            // Recursively, insert entry
+            NewChildEntry newChildEntry = insertHelper(node.children[index], student);
+            // Usual case, did not split child
+            if (newChildEntry == null) {
+                return null;
+            }
+            // If node has space, put new child entry and return
+            if (node.n < node.keys.length) {
+                int insertIndex = findIndex(node, newChildEntry.getNewChildEntry());
+                node.keys[insertIndex] = newChildEntry.getNewChildEntry();
+                node.children[insertIndex + 1] = newChildEntry.getNewChildEntryPointer();
+                node.n++;
+                return null;
+            }
+            // Split
+            int insertIndex = findIndex(node, student.studentId);
+            BTreeNode newNode = new BTreeNode(this.t, false);
+
+            for (int i = 0; i < this.t; i++) {
+
+            }
+
+            // Edge case, node is root
+            if (node.equals(root)) {
+                BTreeNode newRoot = new BTreeNode(this.t, false);
+                newRoot.keys[0] = newNode.keys[0];
+                newRoot.children[0] = node;
+                newRoot.children[1] = newNode;
+                newRoot.n = 1;
+                this.root = newRoot;
             }
         }
 
-        newNode.n = t - 1;
-        node.n = t - 1;
+        int index = findIndex(node, student.studentId);
+        // Node is a leaf node, insert and return
+        if (node.n < node.keys.length) {
+            for (int i = node.n; i > index; i--) {
+                node.keys[i] = node.keys[i - 1];
+            }
+            node.keys[index] = student.studentId;
+            node.values[index] = student.recordId;
+            node.n++;
+            return null;
+        }
+        // Not enough space, we split
+        BTreeNode newNode = new BTreeNode(this.t, true);
 
-        if (node.leaf) {
-            newNode.next = node.next;
-            node.next = newNode;
+        // If index is in first half
+        if (index < this.t) {
+            // Move d + 1 to second half
+            for (int i = 0; i < this.t + 1; i++) {
+                newNode.keys[i] = node.keys[this.t - 1 + i];
+                newNode.values[i] = node.values[this.t - 1 + i];
+                node.keys[this.t - 1 + i] = 0;
+                node.values[this.t - 1 + i] = 0;
+                newNode.n++;
+                node.n--;
+            }
+            // Insert the student
+            for (int i = node.n; i > index; i--) {
+                node.keys[i] = node.keys[i - 1];
+                node.values[i] = node.values[i - 1];
+            }
+            node.keys[index] = student.studentId;
+            node.values[index] = student.recordId;
+            node.n++;
+        } else {
+            // Move d to second half
+            for (int i = 0; i < this.t; i++) {
+                newNode.keys[i] = node.keys[this.t + i];
+                newNode.values[i] = node.values[this.t + i];
+                node.keys[this.t + i] = 0;
+                node.values[this.t + i] = 0;
+                newNode.n++;
+                node.n--;
+            }
+            // Insert the student
+            index = index - this.t;
+            for (int i = newNode.n; i > index; i--) {
+                node.keys[i] = node.keys[i - 1];
+                node.values[i] = node.values[i - 1];
+            }
+            newNode.keys[index] = student.studentId;
+            newNode.values[index] = student.recordId;
+            newNode.n++;
         }
 
-        if (node == root) {
-            BTreeNode newRoot = new BTreeNode(t, false);
-            newRoot.keys[0] = node.keys[mid];
+        newNode.next = node.next;
+        node.next = newNode;
+
+        // Edge case, node is root
+        if (node.equals(root)) {
+            BTreeNode newRoot = new BTreeNode(this.t, false);
+            newRoot.keys[0] = newNode.keys[0];
             newRoot.children[0] = node;
             newRoot.children[1] = newNode;
             newRoot.n = 1;
-            root = newRoot;
-        } else {
-            BTreeNode parent = findParent(root, node);
-            int i = parent.n - 1;
-            while (i >= 0 && node.keys[mid] < parent.keys[i]) {
-                parent.keys[i + 1] = parent.keys[i];
-                parent.children[i + 2] = parent.children[i + 1];
-                i--;
-            }
-            parent.keys[i + 1] = node.keys[mid];
-            parent.children[i + 2] = newNode;
-            parent.n++;
+            this.root = newRoot;
         }
+
+        return new NewChildEntry(newNode, newNode.keys[0]);
     }
-
-    private BTreeNode findParent(BTreeNode current, BTreeNode child) {
-        if (current == null || current.leaf) {
-            return null;
-        }
-
-        for (int i = 0; i <= current.n; i++) {
-            if (current.children[i] == child) {
-                return current;
-            }
-            BTreeNode parent = findParent(current.children[i], child);
-            if (parent != null) {
-                return parent;
-            }
-        }
-
-        return null;
-    }
-
 
     BTree insert(Student student) {
         /**
@@ -197,21 +224,15 @@ class BTree {
          * Also, insert in student.csv after inserting in B+Tree.
          */
 
-         if (root == null) {
-            root = new BTreeNode(t, true);
-            root.keys[0] = student.studentId;
-            root.values[0] = student.recordId;
-            root.n = 1;
-        } else {
-            if (root.n == 2 * t - 1) {
-                BTreeNode newRoot = new BTreeNode(t, false);
-                newRoot.children[0] = root;
-                split(root);
-                root = newRoot;
-            }
-            insertNonFull(root, student);
-        }
-        return this;
+         if (this.root == null) {
+            this.root = new BTreeNode(t, true);
+            this.root.keys[0] = student.studentId;
+            this.root.values[0] = student.recordId;
+            this.root.n = 1;
+            return this;
+         }
+         insertHelper(this.root, student);
+         return this;
     }
 
     private static class OldChildEntry {
