@@ -31,7 +31,7 @@ class BTree {
             return 0;
         }
         // studentID more than node's key at index[n-1], recurse down right most child
-        if (studentId > node.keys[node.n - 1]) {
+        if (studentId >= node.keys[node.n - 1]) {
             return node.n;
         }
         // Find i s.t. key[i] <= studentId < key[i+1] and recurse down child at index i
@@ -264,8 +264,6 @@ class BTree {
         * Implement this function to insert in the B+Tree.
         * Also, insert in student.csv after inserting in B+Tree.
         */
-
-
 
         if (this.root == null) {
         this.root = new BTreeNode(t, true);

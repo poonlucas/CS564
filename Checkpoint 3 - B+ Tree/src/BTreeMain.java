@@ -94,6 +94,8 @@ public class BTreeMain {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        System.out.println(bTree.print());
     }
 
     private static List<Student> getStudents() {

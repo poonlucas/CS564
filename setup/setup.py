@@ -21,20 +21,16 @@ def download_zip():
             if file.filename in FILES:
                 zf.extract(file)
 
+    os.remove("temp.zip")
+
 
 def read_dats():
     for file in FILES:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, delimiter="\t", on_bad_lines='warn', encoding='ISO-8859-1')
         print(df)
-
-
-def cleanup():
-    os.remove("temp.zip")
-    for file in FILES:
         os.remove(file)
 
 
 if __name__ == '__main__':
     download_zip()
     read_dats()
-    cleanup()
