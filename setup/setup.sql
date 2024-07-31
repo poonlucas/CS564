@@ -2,7 +2,7 @@ CREATE DATABASE IF NOT EXISTS moviesdb;
 
 USE moviesdb;
 CREATE TABLE IF NOT EXISTS movies(
-	movie_id BIGINT NOT NULL AUTO_INCREMENT,
+	movie_id BIGINT NOT NULL,
     title VARCHAR(255) NOT NULL,
     year INT,
     imdb_picture_url LONGTEXT,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS movies(
 );
 
 CREATE TABLE IF NOT EXISTS directors(
-	director_id BIGINT NOT NULL AUTO_INCREMENT,
+	director_id BIGINT NOT NULL,
     director_name VARCHAR(255),
     PRIMARY KEY (director_id)
 );
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS directs(
 );
 
 CREATE TABLE IF NOT EXISTS genre(
-	genre_id BIGINT NOT NULL AUTO_INCREMENT,
+	genre_id BIGINT NOT NULL,
     genre_name VARCHAR(255),
     PRIMARY KEY (genre_id)
 );
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS ratings(
 );
 
 CREATE TABLE IF NOT EXISTS tags(
-	tag_id BIGINT NOT NULL AUTO_INCREMENT,
+	tag_id BIGINT NOT NULL,
     tag_name VARCHAR(255),
     PRIMARY KEY (tag_id)
 );
