@@ -35,17 +35,16 @@ def create_app():
     def get_movie_recommendation():
         genre = request.args.get('genre')
         sql = f'''
-        SELECT DISTINCT(m.title),  average_rating
+        SELECT avg_ratings.title, avg_ratings.average_rating, g.genre_name
         FROM genre g
         JOIN has_genre hg ON g.genre_id = hg.genre_id
-        JOIN movies m ON hg.movie_id = m.movie_id
         JOIN (
-            SELECT m.movie_id, m.title, m.imdb_picture_url, AVG(r.rating) AS average_rating
+            SELECT m.movie_id, m.title, AVG(r.rating) AS average_rating
             FROM movies m
             JOIN ratings r ON m.movie_id = r.movie_id
-            GROUP BY m.movie_id, m.title, m.imdb_picture_url
-        ) AS avg_ratings
-        WHERE avg_ratings.average_rating >= 2.5 AND g.genre_name = '{genre}'
+            GROUP BY m.movie_id, m.title
+        ) as avg_ratings ON hg.movie_id = avg_ratings.movie_id
+        WHERE g.genre_name = '{genre}'
         ORDER BY average_rating DESC
         LIMIT 10;
         '''
