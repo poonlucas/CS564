@@ -126,7 +126,39 @@ def create_app():
                 (title, average_rating, ', '.join(str(genre) for genre in genre), ', '.join(str(tag) for tag in tags)))
 
         return render_template('recommendmovie.html', movies=movies)
+    
+    # Find average rating given genre and tag name
+    @app.route('/get-average-rating', methods=['GET'])
+    def get_avg_rating():
+        genre = request.args.get('genre')
+        tag = request.args.get('tag')
 
+        sql = '''
+        SELECT AVG(r.rating) AS average_rating
+        FROM ratings r
+        JOIN movies m ON r.movie_id = m.movie_id
+        LEFT JOIN has_genre hg ON m.movie_id = hg.movie_id
+        LEFT JOIN genre g ON hg.genre_id = g.genre_id
+        LEFT JOIN user_tags ut ON m.movie_id = ut.movie_id
+        LEFT JOIN tags t ON ut.tag_id = t.tag_id
+        WHERE 1=1
+        '''
+
+        params = {}
+
+        params = {}
+        if genre:
+            sql += ' AND g.genre_name = :genre'
+            params['genre'] = genre
+        if tag:
+            sql += ' AND t.tag_name = :tag'
+            params['tag'] = tag
+
+        with engine.connect() as conn:
+            result = conn.execute(text(sql), params)
+            average_rating = result.scalar()
+
+        return render_template('avg_rating.html', average_rating=average_rating, genre=genre, tag=tag)
     return app
 
 
