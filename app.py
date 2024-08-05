@@ -3,7 +3,7 @@ from flask_nav import Nav
 from flask_nav.elements import *
 from sqlalchemy import create_engine, text
 from collections import OrderedDict
-
+import configparser
 
 def create_app():
     nav = Nav()
@@ -17,10 +17,13 @@ def create_app():
     app = Flask(__name__)
     nav.init_app(app)
 
-    host = 'localhost'
-    username = 'root'
-    password = 'root'
-    database = 'moviesdb'
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    host = config.get('Database', 'host')
+    username = config.get('Database', 'username')
+    password = config.get('Database', 'password')
+    database = config.get('Database', 'database')
 
     engine = create_engine(f'mysql+pymysql://{username}:{password}@{host}/{database}')
 
