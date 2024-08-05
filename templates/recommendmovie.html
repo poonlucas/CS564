@@ -7,10 +7,15 @@
 <body>
     <h1>Recommended Movies</h1>
     <form action="/get-movie-recommendation" method="get">
+        <label for="genre">Genre:</label>
         <input name="genre" type="text" id="genre"/>
+        <br>
+        <label for="tag">Tag:</label>
         <input name="tag" type="text" id="tag"/>
+        <br>
         <button type="submit">Find</button>
     </form>
+    
 
     {% if movies %}
     <table>
