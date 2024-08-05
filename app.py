@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, redirect, render_template
 from flask_nav import Nav
 from flask_nav.elements import *
 from sqlalchemy import create_engine, text
@@ -159,8 +159,35 @@ def create_app():
             average_rating = result.scalar()
 
         return render_template('avg_rating.html', average_rating=average_rating, genre=genre, tag=tag)
+     
+    @app.route('/new-movie-insert', methods=['GET', 'POST'])
+    def insert_stored_procedure():
+        director_name = request.args.get('director_name')
+        title = request.args.get('title')
+        year = request.args.get('year')
+        imdb_picture_url = request.args.get('imdb_picture_url')
+
+        if director_name and title and year and imdb_picture_url:
+            sql = f"""
+            CALL insert_movie_with_director(
+                '{director_name}',
+                '{title}',
+                {year},
+                '{imdb_picture_url}'
+            )
+            """
+
+            with conn.connect() as conn:
+                conn.execute(text(sql))
+
+            return redirect('index.html')  
+
+        return render_template('new_movie_insert.html')
+
+
     return app
 
 
 if __name__ == '__main__':
-    create_app().run(debug=True)
+    app = create_app()
+    app.run(debug=True)
