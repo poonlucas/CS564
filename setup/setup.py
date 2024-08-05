@@ -4,9 +4,9 @@ import zipfile
 import pandas as pd
 from sqlalchemy import create_engine
 
+host = 'localhost'
 username = 'root'
 password = 'root'
-host = 'localhost'
 database = 'moviesdb'
 FILES = ["user_taggedmovies-timestamps.dat",
          "movie_directors.dat",
@@ -42,7 +42,7 @@ def read_dats():
 
 def insert():
 
-    engine = create_engine(f'mysql+mysqlconnector://{username}:{password}@{host}/{database}')
+    engine = create_engine(f'mysql+pymysql://{username}:{password}@{host}/{database}')
 
     print("Populating directors...")
     directors_dict = {k: v for v, k in enumerate(dfs[FILES[1]].directorName.unique())}
