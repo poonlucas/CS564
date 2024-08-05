@@ -3,11 +3,18 @@ import urllib.request
 import zipfile
 import pandas as pd
 from sqlalchemy import create_engine
+import configparser
 
-host = 'localhost'
-username = 'root'
-password = 'root'
-database = 'moviesdb'
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+
+host = config.get('Database', 'host')
+username = config.get('Database', 'username')
+password = config.get('Database', 'password')
+database = config.get('Database', 'database')
+
 FILES = ["user_taggedmovies-timestamps.dat",
          "movie_directors.dat",
          "movie_genres.dat",
