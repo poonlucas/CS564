@@ -11,14 +11,11 @@
             <li><a href="/">Home</a></li>
             <li><a href="/get-movie-recommendation">Recommend Movies</a></li>
             <li><a href="/get-average-rating">Average Rating</a></li>
-            <li><a href = "/new-movie-insert">Insert A New Movie</a></li>
+            <li><a href="/new-movie-insert">Insert A New Movie</a></li>
         </ul>
     </nav>
     <h1>Insert Movie with Director</h1>
     <form action="/new-movie-insert" method="post">
-        <label for="director_name">Director Name:</label>
-        <input name="director_name" type="text" id="director_name" required/>
-        <br>
         <label for="title">Movie Title:</label>
         <input name="title" type="text" id="title" required/>
         <br>
@@ -28,7 +25,11 @@
         <label for="imdb_picture_url">IMDB Picture URL:</label>
         <input name="imdb_picture_url" type="url" id="imdb_picture_url" required/>
         <br>
+        <label for="director_name">Director Name:</label>
+        <input name="director_name" type="text" id="director_name" required/>
+        <br>
         <button type="submit">Insert Movie</button>
     </form>
+    <p>{{ response }}</p>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, redirect, render_template
+from flask import Flask, render_template
 from flask_nav import Nav
 from flask_nav.elements import *
 from sqlalchemy import create_engine, text
@@ -105,8 +105,6 @@ def create_app():
         LEFT JOIN tags t ON ut.tag_id = t.tag_id
         ORDER BY top_movies.average_rating DESC;'''
 
-        print(sql)
-
         movie_dict = OrderedDict()
         with engine.connect() as conn:
             result = conn.execute(text(sql))
@@ -126,7 +124,7 @@ def create_app():
                 (title, average_rating, ', '.join(str(genre) for genre in genre), ', '.join(str(tag) for tag in tags)))
 
         return render_template('recommendmovie.html', movies=movies)
-    
+
     # Find average rating given genre and tag name
     @app.route('/get-average-rating', methods=['GET'])
     def get_avg_rating():
@@ -159,31 +157,34 @@ def create_app():
             average_rating = result.scalar()
 
         return render_template('avg_rating.html', average_rating=average_rating, genre=genre, tag=tag)
-     
+
     @app.route('/new-movie-insert', methods=['GET', 'POST'])
     def insert_stored_procedure():
-        director_name = request.args.get('director_name')
-        title = request.args.get('title')
-        year = request.args.get('year')
-        imdb_picture_url = request.args.get('imdb_picture_url')
+        if request.method == 'GET':
+            response = ""
+        elif request.method == 'POST':
+            title = request.form.get('title')
+            year = request.form.get('year')
+            imdb_picture_url = request.form.get('imdb_picture_url')
+            director_name = request.form.get('director_name')
 
-        if director_name and title and year and imdb_picture_url:
-            sql = f"""
-            CALL insert_movie_with_director(
-                '{director_name}',
-                '{title}',
-                {year},
-                '{imdb_picture_url}'
-            )
-            """
+            if director_name != "" and title != "" and year != "" and imdb_picture_url != "":
+                sql = f"CALL insert_movie_with_director('{director_name}', '{title}', {year}, '{imdb_picture_url}');"
 
-            with conn.connect() as conn:
-                conn.execute(text(sql))
+                print(sql)
 
-            return redirect('index.html')  
+                with engine.connect() as conn:
+                    result = conn.execute(text(sql))
+                    conn.commit()
+                    response = f"Success! Inserted movie {title} at id {result.first()[0]}!"
+            else:
+                response = "Error: Missing "
+                response += "" if director_name != "" else "Director "
+                response += "" if title != "" else "Title "
+                response += "" if year != "" else "Year "
+                response += "" if imdb_picture_url != "" else "IMDB Picture Url"
 
-        return render_template('new_movie_insert.html')
-
+        return render_template('new_movie_insert.html', response=response)
 
     return app
 
