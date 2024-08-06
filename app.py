@@ -124,13 +124,24 @@ def create_app():
         if title != "" and title is not None:
             sql = f"CALL get_average_rating('{title}')"
 
+            movie_dict = OrderedDict()
             with engine.connect() as conn:
                 result = conn.execute(text(sql))
-                res = result.fetchall()
-                if len(res) < 1:
-                    movies = None
-                else:
-                    movies = res
+                for row in result:
+                    if row[0] not in movie_dict:
+                        movie_dict[row[0]] = (row[1], row[2], [row[3]], [row[4]])
+                    else:
+                        _, _, genre, tags = movie_dict[row[0]]
+                        if row[3] not in genre:
+                            genre.append(row[3])
+                        if row[4] not in tags:
+                            tags.append(row[4])
+
+            movies = []
+            for title, (year, average_rating, genre, tags) in movie_dict.items():
+                movies.append(
+                    (title, year, average_rating, ', '.join(str(genre) for genre in genre),
+                     ', '.join(str(tag) for tag in tags)))
 
         return render_template('movie_average_rating.html', movies=movies)
 

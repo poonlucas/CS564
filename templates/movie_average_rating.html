@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Get the Avegare rating of a Category of movies</title>
+    <title>Movie Average Rating</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
@@ -32,18 +32,24 @@
                 <th>Title</th>
                 <th>Year</th>
                 <th>Average Rating</th>
+                <th>Genres</th>
+                <th>Tags</th>
             </tr>
         </thead>
         <tbody>
-            {% for title, year, average_rating in movies %}
+            {% for title, year, average_rating, genre, tags in movies %}
             <tr>
                 <td>{{ title }}</td>
                 <td>{{ year }}</td>
                 <td>{{ average_rating }}</td>
+                <td>{{ genre }}</td>
+                <td>{{ tags }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    {% else %}
+    <p>Movie not found!</p>
     {% endif %}
 </body>
 </html>
