@@ -118,35 +118,21 @@ def create_app():
     # Find average rating given genre and tag name
     @app.route('/get-average-rating', methods=['GET'])
     def get_avg_rating():
-        genre = request.args.get('genre')
-        tag = request.args.get('tag')
+        title = request.args.get('title')
 
-        sql = '''
-        SELECT AVG(r.rating) AS average_rating
-        FROM ratings r
-        JOIN movies m ON r.movie_id = m.movie_id
-        LEFT JOIN has_genre hg ON m.movie_id = hg.movie_id
-        LEFT JOIN genre g ON hg.genre_id = g.genre_id
-        LEFT JOIN user_tags ut ON m.movie_id = ut.movie_id
-        LEFT JOIN tags t ON ut.tag_id = t.tag_id
-        WHERE 1=1
-        '''
+        movies = None
+        if title != "" and title is not None:
+            sql = f"CALL get_average_rating('{title}')"
 
-        params = {}
+            with engine.connect() as conn:
+                result = conn.execute(text(sql))
+                res = result.fetchall()
+                if len(res) < 1:
+                    movies = None
+                else:
+                    movies = res
 
-        params = {}
-        if genre:
-            sql += ' AND g.genre_name = :genre'
-            params['genre'] = genre
-        if tag:
-            sql += ' AND t.tag_name = :tag'
-            params['tag'] = tag
-
-        with engine.connect() as conn:
-            result = conn.execute(text(sql), params)
-            average_rating = result.scalar()
-
-        return render_template('avg_rating.html', average_rating=average_rating, genre=genre, tag=tag)
+        return render_template('movie_average_rating.html', movies=movies)
 
     @app.route('/new-movie-insert', methods=['GET', 'POST'])
     def insert_stored_procedure():
@@ -169,27 +155,6 @@ def create_app():
                 response = f"Success! Inserted movie {title} at id {result.first()[0]}!"
 
         return render_template('new_movie_insert.html', response=response)
-
-    @app.route('/delete-movie', methods=['GET', 'POST'])
-    def delete_stored_procedure():
-        if request.method == 'GET':
-            response = ""
-        elif request.method == 'POST':
-            movie_id = request.form.get('movie_id')
-
-            sql = f"CALL delete_movie({movie_id});"
-
-            with engine.connect() as conn:
-                result = conn.execute(text(sql))
-                conn.commit()
-                movie = result.fetchall()
-                if len(movie) != 0:
-                    response = f"Success! Deleted movie {movie[0][0]}!"
-                else:
-                    response = f"Error: Could not find movie with id {movie_id}"
-
-        return render_template('delete_movie.html', response=response)
-
 
     @app.route('/rate', methods=['GET', 'POST'])
     def rate():
@@ -215,6 +180,48 @@ def create_app():
                         response = resp[0]
 
         return render_template('rate.html', response=response)
+
+    @app.route('/tag', methods=['GET', 'POST'])
+    def tag():
+        if request.method == 'GET':
+            response = ""
+        elif request.method == 'POST':
+            movie_id = request.form.get('movie_id')
+            user_id = request.form.get('user_id')
+            tag_name = request.form.get('tag_name')
+
+            sql = f"CALL tag({movie_id}, {user_id}, '{tag_name}');"
+
+            with engine.connect() as conn:
+                result = conn.execute(text(sql))
+                conn.commit()
+                resp = result.first()
+                if resp[1] == 1:
+                    response = f"Success! Tagged {tag_name} to movie {resp[0]}!"
+                else:
+                    response = resp[0]
+
+        return render_template('tag.html', response=response)
+
+    @app.route('/delete-movie', methods=['GET', 'POST'])
+    def delete_stored_procedure():
+        if request.method == 'GET':
+            response = ""
+        elif request.method == 'POST':
+            movie_id = request.form.get('movie_id')
+
+            sql = f"CALL delete_movie({movie_id});"
+
+            with engine.connect() as conn:
+                result = conn.execute(text(sql))
+                conn.commit()
+                movie = result.fetchall()
+                if len(movie) != 0:
+                    response = f"Success! Deleted movie {movie[0][0]}!"
+                else:
+                    response = f"Error: Could not find movie with id {movie_id}"
+
+        return render_template('delete_movie.html', response=response)
 
     return app
 

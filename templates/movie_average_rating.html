@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Recommended Movies</title>
+    <title>Get the Avegare rating of a Category of movies</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
@@ -17,35 +17,29 @@
             <li><a href="/delete-movie">Delete Movie</a></li>
         </ul>
     </nav>
-    <h1>Recommended Movies</h1>
-    <form action="/get-movie-recommendation" method="get">
-        <label for="genre">Genre:</label>
-        <input name="genre" type="text" id="genre"/>
-        <br>
-        <label for="tag">Tag:</label>
-        <input name="tag" type="text" id="tag"/>
+    <h1>Movie Average Rating</h1>
+    <form action="/get-average-rating" method="get">
+        <label for="title">Movie Title:</label>
+        <input name="title" type="text" id="title"/>
         <br>
         <button type="submit">Find</button>
     </form>
     
-
     {% if movies %}
     <table>
         <thead>
             <tr>
                 <th>Title</th>
+                <th>Year</th>
                 <th>Average Rating</th>
-                <th>Genres</th>
-                <th>Tags</th>
             </tr>
         </thead>
         <tbody>
-            {% for title, average_rating, genre, tags in movies %}
+            {% for title, year, average_rating in movies %}
             <tr>
                 <td>{{ title }}</td>
+                <td>{{ year }}</td>
                 <td>{{ average_rating }}</td>
-                <td>{{ genre }}</td>
-                <td>{{ tags }}</td>
             </tr>
             {% endfor %}
         </tbody>
