@@ -1,22 +1,12 @@
 from flask import Flask, render_template
-from flask_nav import Nav
-from flask_nav.elements import *
+from flask_nav.elements import request
 from sqlalchemy import create_engine, text
 from collections import OrderedDict
 import configparser
 
 
 def create_app():
-    nav = Nav()
-    nav.register_element(
-        'top',
-        Navbar(
-            View('Home', 'index'),
-            View('Recommend Movies', 'recommend_movie'))
-    )
-
     app = Flask(__name__)
-    nav.init_app(app)
 
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -34,7 +24,7 @@ def create_app():
 
     @app.route('/recommend-movie')
     def recommend_movie():
-        return render_template('recommendmovie.html')
+        return render_template('recommend_movie.html')
 
     @app.route('/get-movie-recommendation', methods=['GET'])
     def get_movie_recommendation():
@@ -123,7 +113,7 @@ def create_app():
             movies.append(
                 (title, average_rating, ', '.join(str(genre) for genre in genre), ', '.join(str(tag) for tag in tags)))
 
-        return render_template('recommendmovie.html', movies=movies)
+        return render_template('recommend_movie.html', movies=movies)
 
     # Find average rating given genre and tag name
     @app.route('/get-average-rating', methods=['GET'])
@@ -168,23 +158,34 @@ def create_app():
             imdb_picture_url = request.form.get('imdb_picture_url')
             director_name = request.form.get('director_name')
 
-            if director_name != "" and title != "" and year != "" and imdb_picture_url != "":
-                sql = f"CALL insert_movie_with_director('{director_name}', '{title}', {year}, '{imdb_picture_url}');"
+            sql = f"CALL insert_movie_with_director('{director_name}', '{title}', {year}, '{imdb_picture_url}');"
 
-                print(sql)
-
-                with engine.connect() as conn:
-                    result = conn.execute(text(sql))
-                    conn.commit()
-                    response = f"Success! Inserted movie {title} at id {result.first()[0]}!"
-            else:
-                response = "Error: Missing "
-                response += "" if director_name != "" else "Director "
-                response += "" if title != "" else "Title "
-                response += "" if year != "" else "Year "
-                response += "" if imdb_picture_url != "" else "IMDB Picture Url"
+            with engine.connect() as conn:
+                result = conn.execute(text(sql))
+                conn.commit()
+                response = f"Success! Inserted movie {title} at id {result.first()[0]}!"
 
         return render_template('new_movie_insert.html', response=response)
+
+    @app.route('/delete-movie', methods=['GET', 'POST'])
+    def delete_stored_procedure():
+        if request.method == 'GET':
+            response = ""
+        elif request.method == 'POST':
+            movie_id = request.form.get('movie_id')
+
+            sql = f"CALL delete_movie({movie_id});"
+
+            with engine.connect() as conn:
+                result = conn.execute(text(sql))
+                conn.commit()
+                movie = result.fetchall()
+                if len(movie) != 0:
+                    response = f"Success! Deleted movie {movie[0][0]}!"
+                else:
+                    response = f"Error: Could not find movie with id {movie_id}"
+
+        return render_template('delete_movie.html', response=response)
 
     return app
 
