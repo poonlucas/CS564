@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Delete Movie</title>
+    <title>Rate</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
@@ -16,12 +16,18 @@
             <li><a href="/delete-movie">Delete Movie</a></li>
         </ul>
     </nav>
-    <h1>Delete Movie</h1>
-    <form action="/delete-movie" method="post">
+    <h1>Rate</h1>
+    <form action="/rate" method="post">
         <label for="movie_id">Movie ID:</label>
         <input name="movie_id" type="text" id="movie_id" required/>
         <br>
-        <button type="submit">Delete Movie</button>
+        <label for="user_id">User ID:</label>
+        <input name="user_id" type="text" id="user_id" required/>
+        <br>
+        <label for="rating">Rating:</label>
+        <input name="rating" type="number" id="rating" required/>
+        <br>
+        <button type="submit">Rate Movie</button>
     </form>
     <p>{{ response }}</p>
 </body>

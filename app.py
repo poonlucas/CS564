@@ -157,8 +157,11 @@ def create_app():
             year = request.form.get('year')
             imdb_picture_url = request.form.get('imdb_picture_url')
             director_name = request.form.get('director_name')
+            genre = request.form.get('genre')
 
-            sql = f"CALL insert_movie_with_director('{director_name}', '{title}', {year}, '{imdb_picture_url}');"
+            sql = (f"CALL insert_movie("
+                   f"'{director_name}', '{title}', {year}, '{imdb_picture_url}', '{genre}'"
+                   f");")
 
             with engine.connect() as conn:
                 result = conn.execute(text(sql))
@@ -186,6 +189,32 @@ def create_app():
                     response = f"Error: Could not find movie with id {movie_id}"
 
         return render_template('delete_movie.html', response=response)
+
+
+    @app.route('/rate', methods=['GET', 'POST'])
+    def rate():
+        if request.method == 'GET':
+            response = ""
+        elif request.method == 'POST':
+            movie_id = request.form.get('movie_id')
+            user_id = request.form.get('user_id')
+            rating = request.form.get('rating')
+
+            if int(rating) < 0 or int(rating) > 5:
+                response = "Error: Rating must be between 0 and 5"
+            else:
+                sql = f"CALL rate({movie_id}, {user_id}, {rating});"
+
+                with engine.connect() as conn:
+                    result = conn.execute(text(sql))
+                    conn.commit()
+                    resp = result.first()
+                    if resp[1] == 1:
+                        response = f"Success! Rated {rating} for movie {resp[0]}!"
+                    else:
+                        response = resp[0]
+
+        return render_template('rate.html', response=response)
 
     return app
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Insert Movie with Director</title>
+    <title>Insert Movie</title>
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
@@ -11,11 +11,12 @@
             <li><a href="/">Home</a></li>
             <li><a href="/get-movie-recommendation">Recommend Movies</a></li>
             <li><a href="/get-average-rating">Average Rating</a></li>
-            <li><a href="/new-movie-insert">Insert Movie With Director</a></li>
+            <li><a href="/new-movie-insert">Insert Movie</a></li>
+            <li><a href="/rate">Rate</a></li>
             <li><a href="/delete-movie">Delete Movie</a></li>
         </ul>
     </nav>
-    <h1>Insert Movie with Director</h1>
+    <h1>Insert Movie</h1>
     <form action="/new-movie-insert" method="post">
         <label for="title">Movie Title:</label>
         <input name="title" type="text" id="title" required/>
@@ -29,6 +30,8 @@
         <label for="director_name">Director Name:</label>
         <input name="director_name" type="text" id="director_name" required/>
         <br>
+        <label for="genre">Genre:</label>
+        <input name="genre" type="text" id="genre" required/>
         <button type="submit">Insert Movie</button>
     </form>
     <p>{{ response }}</p>
